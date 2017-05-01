@@ -1,8 +1,3 @@
-##Writeup Template
-###You can use this file as a template for your writeup if you want to submit it as a markdown file, but feel free to use some other method and submit a pdf if you prefer.
-
----
-
 **Advanced Lane Finding Project**
 
 The goals / steps of this project are the following:
@@ -18,104 +13,105 @@ The goals / steps of this project are the following:
 
 [//]: # (Image References)
 
-[image1]: ./examples/undistort_output.png "Undistorted"
-[image2]: ./test_images/test1.jpg "Road Transformed"
-[image3]: ./examples/binary_combo_example.jpg "Binary Example"
-[image4]: ./examples/warped_straight_lines.jpg "Warp Example"
-[image5]: ./examples/color_fit_lines.jpg "Fit Visual"
-[image6]: ./examples/example_output.jpg "Output"
+[image1]: ./images/cal.png "Undistorted"
+[image2]: ./images/cal2.png "Undistorted"
+[image3]: ./images/s.png "Binary Example"
+[image4]: ./images/s_bad.png "Bad Binary Example"
+[image5]: ./images/hlsrgb.png "HLSRGB"
+[image6]: ./images/perspective.png "Perspective transform"
+[image7]: ./images/pixels.png "Finding pixels and curve"
+[image8]: ./images/frame.png "Result frame"
 [video1]: ./project_video.mp4 "Video"
 
 ## [Rubric](https://review.udacity.com/#!/rubrics/571/view) Points
-###Here I will consider the rubric points individually and describe how I addressed each point in my implementation.  
+### Here I will consider the rubric points individually and describe how I addressed each point in my implementation.  
 
 ---
-###Writeup / README
+### Writeup / README
 
-####1. Provide a Writeup / README that includes all the rubric points and how you addressed each one.  You can submit your writeup as markdown or pdf.  [Here](https://github.com/udacity/CarND-Advanced-Lane-Lines/blob/master/writeup_template.md) is a template writeup for this project you can use as a guide and a starting point.  
+#### 1. Provide a Writeup / README that includes all the rubric points and how you addressed each one.  You can submit your writeup as markdown or pdf.
 
 You're reading it!
-###Camera Calibration
 
-####1. Briefly state how you computed the camera matrix and distortion coefficients. Provide an example of a distortion corrected calibration image.
+### Source code
+All code is in [project.ipynb](https://github.com/grdshch/CarND-Advanced-Lane-Lines/blob/master/project.ipynb) jupyter notebook file. It contains all stages of experiments with images and videos and the final pipeline. Also you may see it in [html](https://github.com/grdshch/CarND-Advanced-Lane-Lines/blob/master/project.html) format.
 
-The code for this step is contained in the first code cell of the IPython notebook located in "./examples/example.ipynb" (or in lines # through # of the file called `some_file.py`).  
+### Camera Calibration
+
+#### 1. Briefly state how you computed the camera matrix and distortion coefficients. Provide an example of a distortion corrected calibration image.
+
+The code for this step is contained in cells 2-4 of the Jupyter notebook project.ipynb.
 
 I start by preparing "object points", which will be the (x, y, z) coordinates of the chessboard corners in the world. Here I am assuming the chessboard is fixed on the (x, y) plane at z=0, such that the object points are the same for each calibration image.  Thus, `objp` is just a replicated array of coordinates, and `objpoints` will be appended with a copy of it every time I successfully detect all chessboard corners in a test image.  `imgpoints` will be appended with the (x, y) pixel position of each of the corners in the image plane with each successful chessboard detection.  
 
-I then used the output `objpoints` and `imgpoints` to compute the camera calibration and distortion coefficients using the `cv2.calibrateCamera()` function.  I applied this distortion correction to the test image using the `cv2.undistort()` function and obtained this result: 
+I then used the output `objpoints` and `imgpoints` to compute the camera calibration and distortion coefficients using the `cv2.calibrateCamera()` function.  I applied this distortion correction to the test image using the `cv2.undistort()` function and obtained this result:
 
 ![alt text][image1]
 
-###Pipeline (single images)
+### Pipeline (single images)
 
-####1. Provide an example of a distortion-corrected image.
-To demonstrate this step, I will describe how I apply the distortion correction to one of the test images like this one:
+#### 1. Provide an example of a distortion-corrected image.
+Code to undistort road image is located in cell 4 of Jupyter notebook:
 ![alt text][image2]
-####2. Describe how (and identify where in your code) you used color transforms, gradients or other methods to create a thresholded binary image.  Provide an example of a binary image result.
-I used a combination of color and gradient thresholds to generate a binary image (thresholding steps at lines # through # in `another_file.py`).  Here's an example of my output for this step.  (note: this is not actually from one of the test images)
 
+#### 2. Describe how (and identify where in your code) you used color transforms, gradients or other methods to create a thresholded binary image.  Provide an example of a binary image result.
+First I used a combination of S channel from HLS color map and gradient of the image. I selected thresholds to get good result on test images.
 ![alt text][image3]
 
-####3. Describe how (and identify where in your code) you performed a perspective transform and provide an example of a transformed image.
-
-The code for my perspective transform includes a function called `warper()`, which appears in lines 1 through 8 in the file `example.py` (output_images/examples/example.py) (or, for example, in the 3rd code cell of the IPython notebook).  The `warper()` function takes as inputs an image (`img`), as well as source (`src`) and destination (`dst`) points.  I chose the hardcode the source and destination points in the following manner:
-
-```
-src = np.float32(
-    [[(img_size[0] / 2) - 55, img_size[1] / 2 + 100],
-    [((img_size[0] / 6) - 10), img_size[1]],
-    [(img_size[0] * 5 / 6) + 60, img_size[1]],
-    [(img_size[0] / 2 + 55), img_size[1] / 2 + 100]])
-dst = np.float32(
-    [[(img_size[0] / 4), 0],
-    [(img_size[0] / 4), img_size[1]],
-    [(img_size[0] * 3 / 4), img_size[1]],
-    [(img_size[0] * 3 / 4), 0]])
-
-```
-This resulted in the following source and destination points:
-
-| Source        | Destination   | 
-|:-------------:|:-------------:| 
-| 585, 460      | 320, 0        | 
-| 203, 720      | 320, 720      |
-| 1127, 720     | 960, 720      |
-| 695, 460      | 960, 0        |
-
-I verified that my perspective transform was working as expected by drawing the `src` and `dst` points onto a test image and its warped counterpart to verify that the lines appear parallel in the warped image.
+But then found that there are two places in the video where S channel works not well. There are tree shadows which give a lot of noise in S channel.
 
 ![alt text][image4]
 
-####4. Describe how (and identify where in your code) you identified lane-line pixels and fit their positions with a polynomial?
+I tried to make S threshold stricter but this give worse results on other parts of video. After playing with frames with tree shadows I found that histogram of such frame is much higher than one for test images.
 
-Then I did some other stuff and fit my lane lines with a 2nd order polynomial kinda like this:
+As the result I decided to calculate number of pixels on combined binary image and if it is too large then to switch from S channel to B channel from RGB map.
+
+Here all RGB and HLS channels of that frame:
 
 ![alt text][image5]
 
-####5. Describe how (and identify where in your code) you calculated the radius of curvature of the lane and the position of the vehicle with respect to center.
+All described actions are located in `pipeline()` function in cell 17.
 
-I did this in lines # through # in my code in `my_other_file.py`
+#### 3. Describe how (and identify where in your code) you performed a perspective transform and provide an example of a transformed image.
 
-####6. Provide an example image of your result plotted back down onto the road such that the lane area is identified clearly.
+The code for my perspective transform is located in cell 5 of Jupyter notebook and then included into `pipeline()` function in cell 17.
 
-I implemented this step in lines # through # in my code in `yet_another_file.py` in the function `map_lane()`.  Here is an example of my result on a test image:
+To make transform I took test image with straight lines, hardcoded source and destination coordinates.
+
+I verified that my perspective transform was working as expected by drawing the `src` and `dst` points onto a test image and its warped counterpart to verify that the lines appear parallel in the warped image.
 
 ![alt text][image6]
 
+#### 4. Describe how (and identify where in your code) you identified lane-line pixels and fit their positions with a polynomial?
+
+I draw histogram of pixels in combined binary image, took two peaks - for left and right lane lines and used sliding windows to detect places with more pixels storing pixels indices. When indices were detected I used `np.polyfit()` method to get second order polynomial. All that code is located in cell 12 of Jupyter notebook and then is included into `pipeline()` function in cell 17.
+
+![alt text][image7]
+
+#### 5. Describe how (and identify where in your code) you calculated the radius of curvature of the lane and the position of the vehicle with respect to center.
+
+Calculating the radius of curvature is done in cell 16 of Jupyter notebook. I used [this tutorial](http://www.intmath.com/applications-differentiation/8-radius-curvature.php) to get formula for radius. Calculated radius is converted to meters.
+
+To calculate the position of the vehicle I took found x coordinates of left and right lanes in the bottom of the image, too midpoint between them, calculate distance between that midpoint and center of the image, and convert the result to meters. This is done in the end of `pipeline()` function in cell 17 of Jupyter notebook.
+
+#### 6. Provide an example image of your result plotted back down onto the road such that the lane area is identified clearly.
+
+Here is one frame from result video as an example:
+
+![alt text][image8]
+
 ---
 
-###Pipeline (video)
+### Pipeline (video)
 
-####1. Provide a link to your final video output.  Your pipeline should perform reasonably well on the entire project video (wobbly lines are ok but no catastrophic failures that would cause the car to drive off the road!).
+#### 1. Provide a link to your final video output.  Your pipeline should perform reasonably well on the entire project video (wobbly lines are ok but no catastrophic failures that would cause the car to drive off the road!).
 
-Here's a [link to my video result](./project_video.mp4)
+Here's a [link to my video result](https://github.com/grdshch/CarND-Advanced-Lane-Lines/blob/master/project_video_result.mp4)
 
 ---
 
-###Discussion
+### Discussion
 
-####1. Briefly discuss any problems / issues you faced in your implementation of this project.  Where will your pipeline likely fail?  What could you do to make it more robust?
+#### 1. Briefly discuss any problems / issues you faced in your implementation of this project.  Where will your pipeline likely fail?  What could you do to make it more robust?
 
-Here I'll talk about the approach I took, what techniques I used, what worked and why, where the pipeline might fail and how I might improve it if I were going to pursue this project further.  
-
+It was quite easy to get good result on test images. After that about 48 seconds of 50s video were correct, but two 1-second pieces has pure lane lines. I fixed that seconds using caching found lane lines to draw them if pipeline failed to find new on current frame, refinding lane line using sliding windows if pipeline failed to find lane lines on previous frame, switching to B channel instead of S channel if binary image is too noisy. The last point is the weakest place of the algorithm because it looks like hardcoding the solution for the specific video. I selected constant to detect number of pixels when need to switch  to B channel but didn't test it enough. I need more robust algorithm detecting image parameters and selecting specific way to detect lane line pixels.
